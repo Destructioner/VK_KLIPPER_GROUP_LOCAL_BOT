@@ -2,6 +2,7 @@ import asyncio
 import aiofiles
 import time
 import os
+from datetime import datetime
 
 
 from vk_api_group import TeraVkBot
@@ -17,10 +18,6 @@ MOONRAKER_CFG = "moonraker_group_vk.cfg"
 
 
 
-OffsetTime_Clear = time.time()
-OffsetTime_End = OffsetTime_Clear + 20
-
-
 
 
 def clear_c():
@@ -29,16 +26,6 @@ def clear_c():
 
     else:
         os.system("clear")
-
-def clear_terminal():
-    global OffsetTime_Clear
-    global OffsetTime_End
-    
-    if time.time() >= OffsetTime_End:
-        OffsetTime_Clear = time.time()
-        OffsetTime_End = OffsetTime_Clear + 20
-        
-        clear_c()
 
 clear_c()
 clear_c()
@@ -54,22 +41,24 @@ async def VK_BOT_USERS(vk_bot, peer_db):
     global JPG_Snapshot_Stream
     
     while True:
-        async for key_peer_id in peer_db.get_all_peer_id():
-            id_message = await peer_db.get_conserv_id(key_peer_id)
-            
-            
-            if len(JPG_Snapshot_Stream) != 0 and str(JPG_Snapshot_Stream).find("Server Error") == -1:
-                JPGAttachFrame = await vk_bot.sendPhoto(key_peer_id, JPG_Snapshot_Stream)
+        db_check = await peer_db.is_empty()
+        if db_check != True:
+            async for key_peer_id in peer_db.get_all_peer_id():
+                id_message = await peer_db.get_conserv_id(key_peer_id)
+                
+                
+                if len(JPG_Snapshot_Stream) != 0 and str(JPG_Snapshot_Stream).find("Server Error") == -1:
+                    JPGAttachFrame = await vk_bot.sendPhoto(key_peer_id, JPG_Snapshot_Stream)
         
-                await vk_bot.editMessage(key_peer_id, id_message, DataMetrics, AttachFrame)
+                    await vk_bot.editMessage(key_peer_id, id_message, DataMetrics, AttachFrame)
         
-                print(f"[VK_BOT_USERS] VK ДАННЫЕ ОБНОВЛЕНЫ: {key_peer_id}\r\n" + f"[P] Длина изображения: {len(JPG_Snapshot_Stream)}")
+                    print(f"[VK_BOT_USERS] VK ДАННЫЕ ОБНОВЛЕНЫ: {key_peer_id}\r\n" + f"[P] Длина изображения: {len(JPG_Snapshot_Stream)}")
         
-            else:
-                await vk_bot.editMessage(key_peer_id, id_message, DataMetrics, "")
+                else:
+                    await vk_bot.editMessage(key_peer_id, id_message, DataMetrics, "")
         
-                print(f"[VK_BOT_USERS] VK ДАННЫЕ ОБНОВЛЕНЫ: {key_peer_id}\r\n")
-                print("[VK_BOT_USERS] Отсутствует фото: ", JPG_Snapshot_Stream.decode(), "\r\n")
+                    print(f"[VK_BOT_USERS] VK ДАННЫЕ ОБНОВЛЕНЫ: {key_peer_id}\r\n")
+                    print("[VK_BOT_USERS] Отсутствует фото: ", JPG_Snapshot_Stream.decode(), "\r\n")
  
     
 async def vk_message_handler(vk_bot, klipper_db, peer_id, text_message):
@@ -105,6 +94,7 @@ async def VK_BOT_TERA():
     await VkBot.initClient()
     
     db_vk = PeerConservationDB("peer_id_DB.db")
+    await db_vk.init()
     
     asyncio.create_task(VK_BOT_USERS(VkBot, db_vk))
     
@@ -140,7 +130,13 @@ async def MOONRAKERBOT_TERA():
             Progress_Moonraker = MoonrakerWork.GetProgress()
             Progress_Bar = "[" + ("█" * int((Progress_Moonraker / 100) * PROGRESS_PRC)) + ("░" * int(PROGRESS_PRC - (Progress_Moonraker / 100) * PROGRESS_PRC)) + "]"
             
-            DataMetrics = f"---VK-KLIPPER-BOT---\r\nFile name: {MoonrakerWork.GetFileName_Printing()}\r\nStatus printing: {MoonrakerWork.GetStatusPrinter()}\r\nHeater bed: {MoonrakerWork.GetTemp_HeaterBed()}\r\nExtruder: {MoonrakerWork.GetTemp_Extruder()}\r\nПрогресс: {Progress_Moonraker}%\r\n{Progress_Bar}"
+            struct_time_update = time.localtime()
+            
+            Hour = struct_time_update.tm_hour
+            Minute = struct_time_update.tm_min
+            Sec = struct_time_update.tm_sec
+            
+            DataMetrics = f"---VK-KLIPPER-BOT---\r\nLAST_UPDATE: {Hour}:{Minute}:{Sec}\r\n\r\nFile name: {MoonrakerWork.GetFileName_Printing()}\r\nStatus printing: {MoonrakerWork.GetStatusPrinter()}\r\nHeater bed: {MoonrakerWork.GetTemp_HeaterBed()}\r\nExtruder: {MoonrakerWork.GetTemp_Extruder()}\r\nПрогресс: {Progress_Moonraker}%\r\n{Progress_Bar}"
             JPG_Snapshot_Stream = MoonrakerWork.GetFrame_Camera()
             print("\033[2J\033[H" + DataMetrics)
 
