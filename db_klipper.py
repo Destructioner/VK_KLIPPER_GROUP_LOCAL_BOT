@@ -1,22 +1,24 @@
 import asyncio
 import aiofiles
+import aiofiles.os
 import json
 
 class PeerConservationDB:
     def __init__(self, file_name_db):
         self.__file_name_db = file_name_db
         self.__cache_db = {}
-        
-        try:
-            with open(self.__file_name_db, "r") as init_cache:
-                TempJson = init_cache.read()
-                self.__cache_db = json.loads(TempJson)
+
+    async def init(self):
+        if await self.is_empty() != True:
+            try:
+                with open(self.__file_name_db, "r") as init_cache:
+                    TempJson = init_cache.read()
+                    self.__cache_db = json.loads(TempJson)
                 
-        except FileNotFoundError:
-            create_file = open(self.__file_name_db, "w")
-            create_file.close()
-
-
+            except FileNotFoundError:
+                create_file = open(self.__file_name_db, "w")
+                create_file.close()
+    
     async def get_conserv_id(self, peer_id: str):
         if peer_id in self.__cache_db:
             return str(self.__cache_db[peer_id])
@@ -52,3 +54,11 @@ class PeerConservationDB:
         for key_id in self.__cache_db.keys():
             await asyncio.sleep(0)
             yield key_id
+            
+    async def is_empty(self):
+        length_db_file = await aiofiles.os.stat(self.__file_name_db)
+        
+        if length_db_file.st_size == 0:
+            return True
+            
+        return False
