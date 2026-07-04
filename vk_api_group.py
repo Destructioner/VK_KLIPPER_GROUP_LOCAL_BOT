@@ -217,10 +217,10 @@ class TeraVkBot:
             
             await asyncio.sleep(2)
     
-    async def editMessage(self, peer_id, conserv_id, message_text, attachments = ""):
+    async def editMessage(self, peer_id, id_message, message_text, attachments = ""):
         try:
             if attachments == "":
-                API_VK_RESP = await self.__vk_request.post("https://api.vk.com/method/messages.edit?v=5.199", data = {"peer_id": peer_id, "message": message_text, "cmid": conserv_id, "access_token": self.__ACCESS_TOKEN})
+                API_VK_RESP = await self.__vk_request.post("https://api.vk.com/method/messages.edit?v=5.199", data = {"peer_id": peer_id, "message": message_text, "message_id": id_message, "access_token": self.__ACCESS_TOKEN})
             
                 if API_VK_RESP.status == 200:
                     json_out = await API_VK_RESP.json()
@@ -237,7 +237,7 @@ class TeraVkBot:
             
             
             else:
-                API_VK_RESP = await self.__vk_request.post("https://api.vk.com/method/messages.edit?v=5.199", data = {"peer_id": peer_id, "message": message_text, "attachment": attachments, "cmid": conserv_id, "access_token": self.__ACCESS_TOKEN})
+                API_VK_RESP = await self.__vk_request.post("https://api.vk.com/method/messages.edit?v=5.199", data = {"peer_id": peer_id, "message": message_text, "attachment": attachments, "message_id": id_message, "access_token": self.__ACCESS_TOKEN})
             
                 json_out = await API_VK_RESP.json()
                 await self.__requests_block_api()
@@ -301,7 +301,7 @@ class TeraVkBot:
                 json_id = await message_send.json()
                 await self.__requests_block_api()
             
-                return str(json_id["response"] - 1)
+                return str(json_id["response"])
         
             else:
                 message_send = await self.__vk_request.post("https://api.vk.com/method/messages.send", data = {"user_id": peer_id, "random_id": str(random.randint(23567, 1000000)), "message": text_message, "attachment": attachments, "access_token": self.__ACCESS_TOKEN, "v": "5.199"})
@@ -309,7 +309,7 @@ class TeraVkBot:
                 json_id = await message_send.json()
                 await self.__requests_block_api()
             
-                return str(json_id["response"] - 1)
+                return str(json_id["response"])
                 
                 
         except aiohttp.client_exceptions.ClientConnectionError as error_connect:
